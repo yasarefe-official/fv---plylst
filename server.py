@@ -6,19 +6,39 @@ from spotipy.exceptions import SpotifyException
 from dotenv import load_dotenv
 import time
 
-# .env dosyasını oku
+# .env dosyasını oku (varsa)
 load_dotenv()
 
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-REDIRECT_URI = os.getenv('REDIRECT_URI')
-PLAYLIST_NAME = "Beğenilen Şarkılar 💚"
+try:
+    # Production ortamı değişkenleri
+    CLIENT_ID = os.environ['CLIENT_ID']
+    CLIENT_SECRET = os.environ['CLIENT_SECRET']
+    REDIRECT_URI = os.environ['REDIRECT_URI']
+except KeyError:
+    # Local environment değişkenleri
+    CLIENT_ID = os.getenv('CLIENT_ID')
+    CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+    REDIRECT_URI = os.getenv('REDIRECT_URI')
+
+# Playlist adı için varsayılan değer kullan
+PLAYLIST_NAME = os.getenv('PLAYLIST_NAME', "Beğenilen Şarkılar 💚")
 
 if not all([CLIENT_ID, CLIENT_SECRET, REDIRECT_URI]):
-    raise ValueError("Lütfen .env dosyasında tüm gerekli değişkenleri tanımlayın.")
+    print("HATA: Environment variables eksik!")
+    print(f"CLIENT_ID: {CLIENT_ID}")
+    print(f"CLIENT_SECRET: {CLIENT_SECRET}")
+    print(f"REDIRECT_URI: {REDIRECT_URI}")
+    raise ValueError("Lütfen gerekli environment variables'ları tanımlayın: CLIENT_ID, CLIENT_SECRET, REDIRECT_URI")
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+
+# Session ayarları
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
 
 # Daha geniş scope izinleri
 scope = "user-library-read playlist-modify-public playlist-modify-private user-read-private"
